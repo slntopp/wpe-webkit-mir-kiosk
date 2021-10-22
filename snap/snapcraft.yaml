@@ -39,13 +39,9 @@ environment:
   GST_PLUGIN_SCANNER: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
   LD_LIBRARY_PATH: ${SNAP}/graphics/lib:${SNAP}/graphics-2/lib:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio
 
+  # The `graphics` path comes from mesa-core20. `graphics-2` is a fallback in case there is a second mesa-core20 interface already mounted.
   LIBGL_DRIVERS_PATH: ${SNAP}/graphics/dri:${SNAP}/graphics-2/dri
   LIBVA_DRIVERS_PATH: ${SNAP}/graphics/dri:${SNAP}/graphics-2/dri
-  # cf. https://tutorials.ubuntu.com/tutorial/wayland-kiosk#9
-  # Liberally adapted from
-  # https://github.com/MirServer/mir-kiosk-apps/blob/master/snap/snapcraft.yaml
-  # Some might not be needed, but omitting some would either crash
-  # the WPE renderer process or cause AppArmor denials
   __EGL_VENDOR_LIBRARY_DIRS: $SNAP/graphics/glvnd/egl_vendor.d:$SNAP/graphics-2/glvnd/egl_vendor.d:$SNAP/etc/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
 
   XKB_CONFIG_ROOT: ${SNAP}/usr/share/X11/xkb
