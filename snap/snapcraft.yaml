@@ -10,7 +10,6 @@ description: |
   performance.”
   This snap runs the included MiniBrowser as a service in kiosk mode.'
 confinement: strict
-
 # TODO: Check if these paths can be made relative with compiler flags
 layout:
   # Relies on cmake install prefix $SNAP/usr, /libexec is not allowed
@@ -26,6 +25,10 @@ layout:
     bind: $SNAP/usr/share/zoneinfo-icu
   /usr/share/fonts:
     bind: $SNAP/usr/share/fonts
+  /usr/share/libdrm: # Needed by mesa-core20 on AMD GPUs
+    bind: $SNAP/graphics/libdrm
+  /usr/share/drirc.d: # Used by mesa-core20 for app specific workarounds
+    bind: $SNAP/graphics/drirc.d
   /usr/local/share/fonts: # wpe-webkit: Search ALL the fonts!
     bind: $SNAP/usr/share/fonts
 
@@ -34,16 +37,12 @@ environment:
   GST_PLUGIN_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/gstreamer-1.0
   GST_PLUGIN_SYSTEM_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/gstreamer-1.0
   GST_PLUGIN_SCANNER: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
-  LD_LIBRARY_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio
+  LD_LIBRARY_PATH: ${SNAP}/graphics/lib:${SNAP}/graphics-2/lib:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio
 
-  LIBGL_DRIVERS_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
-  LIBVA_DRIVERS_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
-  # cf. https://tutorials.ubuntu.com/tutorial/wayland-kiosk#9
-  # Liberally adapted from
-  # https://github.com/MirServer/mir-kiosk-apps/blob/master/snap/snapcraft.yaml
-  # Some might not be needed, but omitting some would either crash
-  # the WPE renderer process or cause AppArmor denials
-  __EGL_VENDOR_LIBRARY_DIRS: $SNAP/etc/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
+  # The `graphics` path comes from mesa-core20. `graphics-2` is a fallback in case there is a second mesa-core20 interface already mounted.
+  LIBGL_DRIVERS_PATH: ${SNAP}/graphics/dri:${SNAP}/graphics-2/dri
+  LIBVA_DRIVERS_PATH: ${SNAP}/graphics/dri:${SNAP}/graphics-2/dri
+  __EGL_VENDOR_LIBRARY_DIRS: $SNAP/graphics/glvnd/egl_vendor.d:$SNAP/graphics-2/glvnd/egl_vendor.d:$SNAP/etc/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
 
   XKB_CONFIG_ROOT: ${SNAP}/usr/share/X11/xkb
   FONTCONFIG_PATH: ${SNAP}/etc/fonts/conf.d
@@ -66,6 +65,11 @@ plugs:
   hostname-control:
   process-control:
   # - browser-support # TODO: Use this if/when we can get rid of preload/desktop-launch
+  system-observe: # required for /proc/zoneinfo access
+  graphics-core20:
+    interface: content
+    target: $SNAP/graphics
+    default-provider: mesa-core20
 
 slots:
   dbus-cogctl:
@@ -113,7 +117,7 @@ parts:
   mir-kiosk-snap-launch:
     plugin: dump
     source: https://github.com/MirServer/mir-kiosk-snap-launch.git
-    override-build: $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl pulseaudio wayland
+    override-build: $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl wayland graphics-core20 audio-playback
     stage-packages:
       - inotify-tools
 
@@ -336,3 +340,16 @@ parts:
       - inotify-tools
     organize:
       watcher: bin/
+
+  cleanup-mesa:
+    after: [libwpe, wpebackend-fdo, wpe-webkit, cog, mir-kiosk-snap-launch]
+    plugin: nil
+    build-snaps: [mesa-core20]
+    override-prime: |
+      set -eux
+      cd /snap/mesa-core20/current/egl/lib
+      find . -type f,l -exec rm -f $SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/{} \;
+      rm -fr "$SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri"
+      for CRUFT in bug drirc.d glvnd libdrm lintian man; do
+        rm -rf "$SNAPCRAFT_PRIME/usr/share/$CRUFT"
+      done
