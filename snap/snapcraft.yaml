@@ -1,4 +1,4 @@
-name: wpe-webkit-mir-kiosk
+name: wpe-webkit-mir-kiosk-with-delay
 base: core20
 adopt-info: wpe-webkit
 summary: WPE Webkit in kiosk mode. Intended for mir-kiosk on embedded devices.
