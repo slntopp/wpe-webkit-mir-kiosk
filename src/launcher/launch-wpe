@@ -4,6 +4,11 @@ url="$(snapctl get url)"
 devmode="$(snapctl get devmode)"
 debug="$(snapctl get debug)"
 error_to_console="$(snapctl get error-to-console)"
+delay="$(snapctl get delay)"
+
+# Sleep $delay seconds
+echo "Waiting $delay seconds..."
+sleep "$delay"
 
 # Toggle remote debugging
 if [[ $devmode == true ]]; then
