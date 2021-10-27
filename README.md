@@ -14,6 +14,7 @@ The snap should run on [all snapd-supported distributions](https://docs.snapcraf
 - Fullscreen webview for any size or rotation passed by the Wayland compositor
 - [Configurable](https://docs.snapcraft.io/configuration-in-snaps/510):
   - `url`: Accepts HTTP(S) URLs
+  - `delay`: Delay before starting webkit in seconds
   - `devmode`: Toggle Remote Inspector on/off
   - `error-to-console`: Logs JavaScript errors to the service log instead of the console, useful for remote debugging (check the logs with `snap logs wpe-webkit-mir-kiosk.browser`)
   - `debug`: Enables (very) verbose debug messaging by setting `G_MESSAGES_DEBUG=all`, `LIBGL_DEBUG=verbose` and `WAYLAND_DEBUG=1`. Useful only if the browser won't start at all or has critical rendering issues, as this will definitely spam your logs.
