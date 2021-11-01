@@ -259,6 +259,8 @@ parts:
       fi
 
       snapcraftctl build
+    build-environment:
+      - memory: 8G
 
   # See Source/cmake/WebKitFeatures.cmake for build-time options.
   # See Source/cmake/OptionsWPE.cmake for overrides applied by WPE.
